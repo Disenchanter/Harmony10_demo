@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'models.dart';
 import 'api_service.dart';
 
@@ -61,10 +61,17 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
   String? midiFilePath;
   bool isLoading = false;
   String? errorMessage;
+  
+  // 音频播放
+  AudioPlayer? audioPlayer;
+  bool isPlaying = false;
+  Duration currentPosition = Duration.zero;
+  Duration totalDuration = Duration.zero;
 
   @override
   void dispose() {
     recordingTimer?.cancel();
+    audioPlayer?.dispose();
     super.dispose();
   }
 
@@ -196,36 +203,77 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
     });
   }
 
-  Future<void> _openMidiFile() async {
-    if (midiFilePath == null) {
-      setState(() {
-        errorMessage = 'MIDI文件路径为空';
+
+
+  Future<void> _initializeAudioPlayer() async {
+    if (audioPlayer == null) {
+      audioPlayer = AudioPlayer();
+      
+      // 监听播放状态
+      audioPlayer!.onPlayerStateChanged.listen((state) {
+        setState(() {
+          isPlaying = state == PlayerState.playing;
+        });
       });
-      return;
+      
+      // 监听播放位置
+      audioPlayer!.onPositionChanged.listen((position) {
+        setState(() {
+          currentPosition = position;
+        });
+      });
+      
+      // 监听总时长
+      audioPlayer!.onDurationChanged.listen((duration) {
+        setState(() {
+          totalDuration = duration;
+        });
+      });
     }
+  }
+
+  Future<void> _playMidiFile() async {
+    if (midiFilePath == null) return;
     
     try {
+      await _initializeAudioPlayer();
+      
+      // 检查文件是否存在
       final file = File(midiFilePath!);
-      print('尝试打开文件: $midiFilePath');
-      print('文件是否存在: ${await file.exists()}');
-      print('文件大小: ${await file.exists() ? await file.length() : 0} bytes');
-      
-      final uri = Uri.file(midiFilePath!);
-      print('文件URI: $uri');
-      
-      if (await canLaunchUrl(uri)) {
-        print('可以启动URL，正在打开...');
-        await launchUrl(uri);
-      } else {
-        print('无法启动URL');
+      if (!await file.exists()) {
         setState(() {
-          errorMessage = '无法打开MIDI文件。请确保系统已安装MIDI播放器。\n文件路径: $midiFilePath';
+          errorMessage = 'MIDI文件不存在: $midiFilePath';
         });
+        return;
       }
+      
+      print('开始播放MIDI文件: $midiFilePath');
+      print('文件大小: ${await file.length()} bytes');
+      
+      // 尝试使用DeviceFileSource播放
+      await audioPlayer!.play(DeviceFileSource(midiFilePath!));
+      
+      print('播放命令已发送');
+      
     } catch (e) {
-      print('打开文件时发生错误: $e');
+      print('播放MIDI文件时发生错误: $e');
       setState(() {
-        errorMessage = '打开文件失败: $e\n文件路径: $midiFilePath';
+        errorMessage = '播放失败: $e\n\n这可能是因为:\n1. MIDI文件格式不被支持\n2. 系统音频设备问题\n3. 音频驱动问题\n\n请尝试用外部播放器播放此文件。';
+      });
+    }
+  }
+
+  Future<void> _pausePlayback() async {
+    if (audioPlayer != null) {
+      await audioPlayer!.pause();
+    }
+  }
+
+  Future<void> _stopPlayback() async {
+    if (audioPlayer != null) {
+      await audioPlayer!.stop();
+      setState(() {
+        currentPosition = Duration.zero;
       });
     }
   }
@@ -486,19 +534,88 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
           style: const TextStyle(color: Colors.grey, fontSize: 12),
         ),
         const SizedBox(height: 16),
-        // 打开MIDI文件按钮
-        ElevatedButton.icon(
-          onPressed: _openMidiFile,
-          icon: const Icon(Icons.music_note),
-          label: const Text('打开MIDI文件'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          ),
-        ),
+        // 音频播放控制器
+        _buildAudioPlayerControls(),
       ],
     );
+  }
+
+  Widget _buildAudioPlayerControls() {
+    return Column(
+      children: [
+        // 播放进度条（如果有总时长）
+        if (totalDuration.inMilliseconds > 0) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                Text(
+                  _formatDuration(currentPosition),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                Expanded(
+                  child: Slider(
+                    value: currentPosition.inMilliseconds.toDouble(),
+                    max: totalDuration.inMilliseconds.toDouble(),
+                    onChanged: (value) async {
+                      final position = Duration(milliseconds: value.toInt());
+                      await audioPlayer?.seek(position);
+                    },
+                  ),
+                ),
+                Text(
+                  _formatDuration(totalDuration),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+        
+        // 播放控制按钮
+        // Row(
+        //   mainAxisAlignment: MainAxisAlignment.center,
+        //   children: [
+        //     // 播放/暂停按钮
+        //     ElevatedButton.icon(
+        //       onPressed: isPlaying ? _pausePlayback : _playMidiFile,
+        //       icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
+        //       label: Text(isPlaying ? '暂停' : '播放'),
+        //       style: ElevatedButton.styleFrom(
+        //         backgroundColor: isPlaying ? Colors.orange : Colors.green,
+        //         foregroundColor: Colors.white,
+        //         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        //       ),
+        //     ),
+            
+        //     const SizedBox(width: 12),
+            
+        //     // 停止按钮
+        //     if (isPlaying || currentPosition.inMilliseconds > 0)
+        //       ElevatedButton.icon(
+        //         onPressed: _stopPlayback,
+        //         icon: const Icon(Icons.stop),
+        //         label: const Text('停止'),
+        //         style: ElevatedButton.styleFrom(
+        //           backgroundColor: Colors.red,
+        //           foregroundColor: Colors.white,
+        //           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        //         ),
+        //       ),
+            
+
+        //   ],
+        // ),
+      ],
+    );
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$minutes:$seconds';
   }
 
   Widget _buildEvaluateResult() {

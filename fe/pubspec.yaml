@@ -20,6 +20,12 @@ dependencies:
   
   # Launch external applications
   url_launcher: ^6.1.12
+  
+  # Audio playback
+  audioplayers: ^5.0.0
+  
+  # MIDI processing
+  midi_util: ^1.0.2
 
 dev_dependencies:
   flutter_test:
