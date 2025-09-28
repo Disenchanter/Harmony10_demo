@@ -1,5 +1,5 @@
 """
-启动脚本 - 运行 FastAPI 应用
+Startup script - run the FastAPI application
 """
 import uvicorn
 

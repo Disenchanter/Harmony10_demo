@@ -4,12 +4,12 @@ import 'package:http/http.dart' as http;
 import 'models.dart';
 
 class ApiService {
-  // 修改这个 IP 地址为你的局域网 IP
-  static const String baseUrl = 'http://127.0.0.1:8000'; // 请修改为实际IP
+  // Update this IP address to match your LAN
+  static const String baseUrl = 'http://127.0.0.1:8000'; // Replace with the actual IP
   
   static const Duration timeout = Duration(seconds: 10);
 
-  /// 调用和声生成接口
+  /// Call the harmonize endpoint
   static Future<Uint8List> harmonize(List<MusicEvent> events) async {
     final request = HarmonizeRequest(
       durationSec: 10,
@@ -42,7 +42,7 @@ class ApiService {
     }
   }
 
-  /// 调用评估接口
+  /// Call the evaluation endpoint
   static Future<EvaluateResponse> evaluate(List<MusicEvent> events) async {
     final request = EvaluateRequest(
       durationSec: 10,
@@ -76,7 +76,7 @@ class ApiService {
     }
   }
 
-  /// 检查后端连接
+  /// Check whether the backend is reachable
   static Future<bool> checkConnection() async {
     try {
       final response = await http

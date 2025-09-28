@@ -1,32 +1,32 @@
-# Music Harmony Demo - 快速启动指南
+# Music Harmony Demo – Quick Start Guide
 
-## 项目概览
+## Project overview
 
-这是一个完整的音乐和声 demo 项目，包含：
-- **Python FastAPI 后端**: 提供 MIDI 和声生成和演奏评估 API
-- **Flutter 前端**: 提供用户交互界面和录制功能
+This end-to-end demo consists of:
+- **Python FastAPI backend** – exposes APIs for MIDI harmony generation and performance evaluation
+- **Flutter frontend** – offers the user interface and recording workflow
 
-## 快速启动
+## Quick start
 
-### 第一步：启动后端服务
+### Step 1: Launch the backend service
 
 ```bash
-# 1. 进入项目根目录
-cd Harmony10_demo
+# 1. Move to the backend directory
+cd Harmony10_demo/be
 
-# 2. 安装 Python 依赖
+# 2. Install Python dependencies
 pip install -r requirements.txt
 
-# 3. 启动 FastAPI 服务器
+# 3. Start the FastAPI server
 python run.py
 ```
 
-✅ 后端服务将运行在 `http://127.0.0.1:8000`
-✅ 访问 `http://127.0.0.1:8000/docs` 查看 API 文档
+✅ The backend runs at `http://127.0.0.1:8000`
+✅ Visit `http://127.0.0.1:8000/docs` for the interactive API documentation
 
-### 第二步：配置前端网络
+### Step 2: Configure frontend networking
 
-1. **查找局域网 IP**
+1. **Find your LAN IP**
 
    **Windows:**
    ```cmd
@@ -38,55 +38,55 @@ python run.py
    ifconfig
    ```
    
-   记录你的局域网 IP 地址 (例如: 192.168.1.100)
+   Note the LAN IP address (for example: 192.168.1.100).
 
-2. **修改前端配置**
+2. **Update the frontend configuration**
 
-   编辑 `flutter_app/lib/api_service.dart`:
+   Edit `fe/lib/api_service.dart`:
    ```dart
-   // 第 6 行，修改为你的实际 IP 地址
+   // On line 6, replace with your actual IP address
    static const String baseUrl = 'http://192.168.1.100:8000';
    ```
 
-### 第三步：运行 Flutter 应用
+### Step 3: Run the Flutter app
 
 ```bash
-# 1. 进入 Flutter 目录
-cd flutter_app
+# 1. Switch to the Flutter directory
+cd ../fe
 
-# 2. 安装 Flutter 依赖
+# 2. Install Flutter dependencies
 flutter pub get
 
-# 3. 运行应用 (连接设备或启动模拟器)
+# 3. Run the app (connect a device or launch an emulator)
 flutter run
 ```
 
-## 使用说明
+## Usage guide
 
-### 界面操作
+### UI flow
 
-1. **模式选择**: 点击顶部的 "Harmonize" 或 "Evaluate" 切换模式
-2. **开始录制**: 点击红色"开始录制"按钮
-3. **录制音符**: 在 10 秒倒计时内点击白键 (C, D, E, F, G, A, B)
-4. **查看结果**: 录制结束后自动处理并显示结果
+1. **Choose a mode**: tap the top buttons “Harmonize” or “Evaluate”.
+2. **Start recording**: hit the red “Start Recording” button.
+3. **Capture notes**: during the 10-second countdown, press the white keys (C, D, E, F, G, A, B).
+4. **Review results**: once recording finishes, processing happens automatically and results appear.
 
-### 两种模式
+### Mode overview
 
-**🎵 Harmonize 模式**
-- 录制旋律
-- 生成带和声的 MIDI 文件
-- 文件保存到应用文档目录
+**🎵 Harmonize mode**
+- Records your melody.
+- Generates a harmonized MIDI file.
+- Saves the file to the app’s documents directory.
 
-**📊 Evaluate 模式**
-- 录制演奏
-- 与 C 大调音阶模板对比
-- 显示评分、错误详情和改进建议
+**📊 Evaluate mode**
+- Records your performance.
+- Compares the notes against the C-major scale template.
+- Presents the score, detailed mistakes, and improvement suggestions.
 
-## 测试验证
+## Validation
 
-### 后端 API 测试
+### Backend API checks
 
-**测试 Harmonize:**
+**Harmonize example:**
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/harmonize" \
      -H "Content-Type: application/json" \
@@ -94,88 +94,88 @@ curl -X POST "http://127.0.0.1:8000/api/v1/harmonize" \
      --output test_harmony.mid
 ```
 
-**测试 Evaluate:**
+**Evaluate example:**
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/evaluate" \
      -H "Content-Type: application/json" \
      -d '{"version":"1.0","mode":"evaluate","duration_sec":10,"quantize":"1s","octave_base":"C4","key":"C major","reference_id":"exercise_c_major_01","events":[{"t_sec":0,"note":60},{"t_sec":1,"note":62},{"t_sec":2,"note":64}]}'
 ```
 
-### 前端连接测试
+### Frontend connectivity check
 
-在 Flutter 应用中：
-1. 确保后端服务正在运行
-2. 尝试录制一个简单的旋律
-3. 检查是否能正常显示结果
+Within the Flutter app:
+1. Make sure the backend service is running.
+2. Record a short melody.
+3. Confirm that the result panel updates successfully.
 
-## 故障排除
+## Troubleshooting
 
-### 常见问题
+### Common pitfalls
 
-❌ **"Network error" 错误**
-- 检查后端是否正在运行
-- 确认 IP 地址配置正确
-- 确保移动设备与电脑在同一 WiFi 网络
+❌ **“Network error” message**
+- Ensure the backend is running.
+- Verify that the IP address is set correctly.
+- Confirm the mobile device and computer share the same Wi-Fi network.
 
-❌ **"No route to host" 错误**
-- 检查防火墙设置
-- 确认端口 8000 没有被阻止
+❌ **“No route to host” message**
+- Inspect firewall settings.
+- Make sure port 8000 is not blocked.
 
-❌ **Flutter 编译错误**
-- 运行 `flutter doctor` 检查环境
-- 确认 Flutter 版本 >= 2.19.0
+❌ **Flutter build failure**
+- Run `flutter doctor` to diagnose the environment.
+- Ensure the Flutter SDK version is ≥ 2.19.0.
 
-### 调试技巧
+### Debugging tips
 
-1. **查看后端日志**
-   - 后端终端会显示所有 API 请求日志
+1. **Inspect backend logs**
+   - The backend terminal prints every API request.
 
-2. **查看 Flutter 日志**
+2. **View Flutter logs**
    ```bash
    flutter logs
    ```
 
-3. **测试网络连接**
-   - 在手机浏览器访问 `http://<你的IP>:8000`
-   - 应该看到 API 欢迎信息
+3. **Test network connectivity**
+   - From the phone browser, open `http://<your-ip>:8000`.
+   - You should see the API welcome page.
 
-## 项目结构
+## Project structure
 
 ```
 Harmony10_demo/
-├── 🐍 Python 后端
-│   ├── main.py              # FastAPI 主应用
-│   ├── models.py            # 数据模型
-│   ├── midi_utils.py        # MIDI 处理
-│   ├── run.py              # 启动脚本
-│   └── requirements.txt    # 依赖列表
+├── 🐍 Python backend
+│   ├── main.py              # FastAPI application
+│   ├── models.py            # Data models
+│   ├── midi_utils.py        # MIDI utilities
+│   ├── run.py               # Launch script
+│   └── requirements.txt     # Dependency list
 │
-├── 📱 Flutter 前端  
+├── 📱 Flutter frontend
 │   ├── lib/
-│   │   ├── main.dart          # 主应用界面
-│   │   ├── models.dart        # 数据模型
-│   │   └── api_service.dart   # API 客户端
-│   ├── pubspec.yaml           # 依赖配置
-│   └── README.md              # 前端说明
+│   │   ├── main.dart          # Main UI
+│   │   ├── models.dart        # Data models
+│   │   └── api_service.dart   # API client
+│   ├── pubspec.yaml           # Dependency configuration
+│   └── README.md              # Frontend guide
 │
-├── README.md                # 项目总体说明
-├── TEST_GUIDE.md           # API 测试指南
-└── QUICK_START.md          # 本快速启动指南
+├── README.md                # Project overview
+├── TEST_GUIDE.md            # API tests
+└── QUICK_START.md           # Quick start guide
 ```
 
-## 技术参数
+## Technical parameters
 
-- **录制时长**: 10 秒固定
-- **音符范围**: C4-B4 白键 (60,62,64,65,67,69,71)
-- **量化精度**: 1 秒
-- **和声规律**: C(0-3s) / F(4-6s) / G(7-9s)
-- **MIDI 格式**: Type-1，双轨道
+- **Recording length**: fixed 10 seconds
+- **Note range**: C4–B4 white keys (60, 62, 64, 65, 67, 69, 71)
+- **Quantization**: 1 second
+- **Harmony voicing**: Each recorded melody note produces a major triad (root, major third, perfect fifth) that sustains until the next melody event.
+- **MIDI format**: Type-1, dual-track
 
-## 成功标志
+## Signs of success
 
-✅ 后端启动成功 - 终端显示 "Uvicorn running on..."
-✅ 前端连接成功 - 应用界面正常显示
-✅ 录制功能正常 - 倒计时和按键响应正常
-✅ 结果显示正常 - Harmonize 显示文件生成，Evaluate 显示评分
+✅ Backend running – terminal shows “Uvicorn running on…"
+✅ Frontend connected – app screen renders correctly
+✅ Recording functional – countdown and key presses behave as expected
+✅ Results visible – Harmonize reports file generation, Evaluate shows scores
 
-现在你的音乐和声 demo 应该已经完全可以使用了！🎵
+You now have the music harmony demo ready to play! 🎵

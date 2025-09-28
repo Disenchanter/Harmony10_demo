@@ -1,120 +1,120 @@
-# 音符数量限制问题修复报告
+# Note Count Limitation Fix Report
 
-## 🐛 问题识别
+## 🐛 Issue identification
 
-你发现的问题：**当音符数量不是规定的10个时会出现错误**
+Observed problem: **an error occurred whenever the note count differed from the fixed set of ten notes.**
 
-## 🔍 问题根源分析
+## 🔍 Root cause analysis
 
-经过深入分析，发现了以下几个相关的限制：
+A deeper investigation revealed several related constraints:
 
-### 1. **模型字段限制** - 主要问题
+### 1. **Model field limits** – primary culprit
 ```python
-# models.py 中的硬编码限制
+# Hard-coded limits in models.py
 class MusicEvent(BaseModel):
-    t_sec: int = Field(..., ge=0, le=9)  # ❌ 只允许0-9秒
-    duration_sec: int = Field(..., ge=1, le=10)  # ❌ 只允许1-10秒
+    t_sec: int = Field(..., ge=0, le=9)  # ❌ Allows only 0–9 seconds
+    duration_sec: int = Field(..., ge=1, le=10)  # ❌ Allows only 1–10 seconds
 ```
 
-### 2. **评估逻辑假设** - 次要问题
+### 2. **Evaluation logic assumptions** – secondary issue
 ```python
-# 原来的评估逻辑假设连续时间检查
-for sec in range(duration_sec):  # ❌ 检查每一秒，不管参考模板
+# Former evaluation logic assumes continuous time checks
+for sec in range(duration_sec):  # ❌ Checks every second regardless of reference
     if sec in reference:
         # ...
 ```
 
-### 3. **参考模板固化** - 设计局限
+### 3. **Hard-coded reference template** – design constraint
 ```python
-# 参考模板只有0-9秒的定义
+# Reference template defined only for seconds 0–9
 "exercise_c_major_01": {
     0: 60, 1: 62, 2: 64, 3: 65, 4: 67,
-    5: 69, 6: 71, 7: 60, 8: 62, 9: 64  # 固定10个音符
+    5: 69, 6: 71, 7: 60, 8: 62, 9: 64  # Fixed set of ten notes
 }
 ```
 
-## 🔧 修复方案
+## 🔧 Fix plan
 
-### 修复1: 扩展时间限制
+### Fix 1: Expand time bounds
 ```python
-# ✅ 修复后 - 支持更长时间
+# ✅ After the fix – supports longer durations
 class MusicEvent(BaseModel):
-    t_sec: int = Field(..., ge=0, le=60)  # 0-60秒
-    duration_sec: int = Field(..., ge=1, le=60)  # 1-60秒
+    t_sec: int = Field(..., ge=0, le=60)  # 0–60 seconds
+    duration_sec: int = Field(..., ge=1, le=60)  # 1–60 seconds
 ```
 
-### 修复2: 改进评估逻辑
+### Fix 2: Improve evaluation logic
 ```python
-# ✅ 修复后 - 只检查参考模板中存在的时间点
+# ✅ After the fix – only check times defined in the reference
 reference_times = [t for t in reference.keys() if t < duration_sec]
-for sec in reference_times:  # 只检查有参考的时间
+for sec in reference_times:  # Inspect only times with references
     # ...
 ```
 
-### 修复3: 处理边界情况
+### Fix 3: Guard edge cases
 ```python
-# ✅ 添加零除保护和空参考处理
+# ✅ Add division guard and empty-reference handling
 if total_points > 0:
     accuracy_score = (correct_notes / total_points) * 100
 else:
     accuracy_score = 50.0 if played_notes else 100.0
 ```
 
-## ✅ 修复验证
+## ✅ Validation
 
-### 测试结果证明修复成功：
+### Test outcomes confirming the fix
 
-1. **3个音符测试** ✅
-   - 输入: 0-2秒的3个音符
-   - 结果: 100.0分，完美识别
+1. **Three-note test** ✅
+    - Input: notes at seconds 0–2
+    - Result: score 100.0, perfect detection
 
-2. **12个音符测试** ✅
-   - 输入: 0-11秒的12个音符
-   - 结果: 94.0分，正确识别10个参考音符+2个额外音符
+2. **Twelve-note test** ✅
+    - Input: notes across seconds 0–11
+    - Result: score 94.0, correct identification of 10 template notes plus 2 extras
 
-3. **不连续时间测试** ✅
-   - 输入: 0,2,4秒的音符（跳过1,3秒）
-   - 结果: 66.0分，正确识别缺失音符
+3. **Non-contiguous timing test** ✅
+    - Input: notes at seconds 0, 2, 4 (skipping 1 and 3)
+    - Result: score 66.0, correctly flags missing notes
 
-4. **超长时间测试** ✅
-   - 输入: 15秒范围内的音符
-   - 结果: 正常处理，不出错
+4. **Extended duration test** ✅
+    - Input: notes within a 15-second window
+    - Result: processed normally without errors
 
-5. **扩展和声生成** ✅
-   - 输入: 20秒内的15个音符
-   - 结果: 成功生成MIDI和对应和弦
+5. **Extended harmony generation** ✅
+    - Input: 15 notes within 20 seconds
+    - Result: successfully generated MIDI plus corresponding chords
 
-## 🎯 修复效果
+## 🎯 Impact of the fix
 
-### 修复前的限制：
-- ❌ 只支持0-9秒（最多10个音符）
-- ❌ 音符超出范围就报错
-- ❌ 评估逻辑假设固定时间序列
-- ❌ 零除错误可能发生
+### Previous limitations
+- ❌ Supported only 0–9 seconds (maximum of ten notes)
+- ❌ Failed if notes fell outside the restricted window
+- ❌ Evaluation assumed a fixed per-second sequence
+- ❌ Division-by-zero errors were possible
 
-### 修复后的能力：
-- ✅ 支持0-60秒（任意数量音符）
-- ✅ 灵活处理任意时间分布
-- ✅ 智能评估逻辑
-- ✅ robust的错误处理
-- ✅ 动态和弦持续时间
-- ✅ 保持向后兼容
+### Capabilities after the fix
+- ✅ Supports 0–60 seconds (any number of notes)
+- ✅ Handles arbitrary time distributions
+- ✅ Smarter evaluation workflow
+- ✅ Robust error handling
+- ✅ Dynamic chord durations
+- ✅ Preserves backward compatibility
 
-## 📊 兼容性
+## 📊 Compatibility
 
-所有原有功能保持100%兼容：
-- ✅ 10个音符的标准用例依然完美工作
-- ✅ API接口不变
-- ✅ 输出格式一致
-- ✅ 和声生成逻辑不变
+All existing functionality remains fully backward compatible:
+- ✅ The classic 10-note scenario still works flawlessly
+- ✅ API interface unchanged
+- ✅ Output format identical
+- ✅ Harmony-generation logic untouched
 
-## 🚀 新能力解锁
+## 🚀 Unlocked capabilities
 
-现在系统支持：
-- **灵活时长**: 1-60秒的音乐
-- **任意音符数**: 1个到任意多个音符
-- **不规律时间**: 不需要连续的每秒音符
-- **长音乐段**: 支持复杂的音乐结构
-- **智能评估**: 根据实际参考模板动态评估
+The system now offers:
+- **Flexible length**: 1–60 seconds of music
+- **Arbitrary note counts**: from a single note to many
+- **Irregular timing**: no need for consecutive per-second events
+- **Longer passages**: suitable for complex musical structures
+- **Adaptive evaluation**: dynamically compares against the available reference data
 
-这个修复让系统从"固定10音符演示"升级为"通用音乐处理平台"！
+This upgrade transforms the experience from a “10-note demo” into a general-purpose music processing toolkit!

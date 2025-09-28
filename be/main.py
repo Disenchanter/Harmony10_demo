@@ -10,7 +10,7 @@ from models import (
 )
 from midi_utils import MidiGenerator, MusicEvaluator
 
-# 配置日志
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -20,18 +20,18 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# 初始化服务
+# Initialize services
 midi_generator = MidiGenerator()
 music_evaluator = MusicEvaluator()
 
 
 @app.exception_handler(ValidationError)
 async def validation_exception_handler(request, exc):
-    """处理 Pydantic 验证错误"""
+    """Handle Pydantic validation errors"""
     error_details = exc.errors()[0] if exc.errors() else {}
     error_msg = error_details.get('msg', 'Validation error')
     
-    # 映射到具体的错误码
+    # Map to a specific error code
     error_code = "validation_error"
     if "Unsupported version" in error_msg:
         error_code = "unsupported_version"
@@ -60,7 +60,7 @@ async def validation_exception_handler(request, exc):
 
 @app.exception_handler(ValueError)
 async def value_error_handler(request, exc):
-    """处理 ValueError"""
+    """Handle ValueError instances"""
     error_msg = str(exc)
     error_code = "validation_error"
     
@@ -89,16 +89,16 @@ async def value_error_handler(request, exc):
 @app.post("/api/v1/harmonize")
 async def harmonize(request: HarmonizeRequest):
     """
-    生成带和声的 MIDI 文件
+    Generate a harmonized MIDI file
     """
     try:
         logger.info(f"Processing harmonize request with {len(request.events)} events")
         
-        # 验证请求
+    # Validate the request
         if request.mode != ModeEnum.HARMONIZE:
             raise ValueError("Invalid mode")
         
-        # 生成 MIDI 和和弦信息
+    # Generate the MIDI data and harmony information
         midi_bytes, chord_names_info = midi_generator.create_harmonized_midi(
             events=request.events,
             duration_sec=request.duration_sec
@@ -107,18 +107,18 @@ async def harmonize(request: HarmonizeRequest):
         logger.info(f"Generated MIDI file with {len(midi_bytes)} bytes")
         logger.info(f"Generated chords: {[chord['chord_name'] for chord in chord_names_info]}")
         
-        # 根据返回模式返回结果
+    # Return the result based on the requested mode
         if request.return_mode == "bytes":
             return Response(
                 content=midi_bytes,
                 media_type="application/octet-stream",
                 headers={
                     "Content-Disposition": "attachment; filename=harmony.mid",
-                    "X-Chord-Info": str(chord_names_info)  # 通过header传递和弦信息
+                    "X-Chord-Info": str(chord_names_info)  # Pass chord info via header
                 }
             )
         else:
-            # URL mode - 返回JSON格式，包含和弦信息
+            # URL mode - return JSON including chord information
             return JSONResponse(content={
                 "url": "https://example.com/generated/harmony.mid",
                 "message": "URL mode not fully implemented in demo",
@@ -134,16 +134,16 @@ async def harmonize(request: HarmonizeRequest):
 @app.post("/api/v1/evaluate", response_model=EvaluateResponse)
 async def evaluate(request: EvaluateRequest):
     """
-    评估音乐演奏表现
+    Evaluate the recorded performance
     """
     try:
         logger.info(f"Processing evaluate request with {len(request.events)} events")
         
-        # 验证请求
+    # Validate the request
         if request.mode != ModeEnum.EVALUATE:
             raise ValueError("Invalid mode")
         
-        # 评估演奏
+    # Run the evaluation
         evaluation_result = music_evaluator.evaluate_performance(
             events=request.events,
             reference_id=request.reference_id,
@@ -155,7 +155,7 @@ async def evaluate(request: EvaluateRequest):
         return EvaluateResponse(**evaluation_result)
         
     except ValueError as e:
-        # 这个会被 value_error_handler 捕获
+    # This will be caught by value_error_handler
         raise e
     except Exception as e:
         logger.error(f"Error in evaluate endpoint: {str(e)}")
@@ -164,7 +164,7 @@ async def evaluate(request: EvaluateRequest):
 
 @app.get("/")
 async def root():
-    """API 健康检查"""
+    """API health check"""
     return {
         "message": "Music Harmony API is running",
         "version": "1.0.0",
@@ -177,7 +177,7 @@ async def root():
 
 @app.get("/api/v1/references")
 async def get_references():
-    """获取可用的参考模板列表"""
+    """Retrieve the list of available reference templates"""
     return {
         "references": [
             {

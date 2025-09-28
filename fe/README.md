@@ -1,185 +1,192 @@
-# Flutter 音乐和声 Demo
+# Flutter Music Harmony Demo
 
-这是一个 Flutter 前端应用，配合 FastAPI 后端实现音乐和声生成和演奏评估功能。
+This Flutter application works with the FastAPI backend in the parent directory to generate harmonies for short melodies and evaluate recorded performances.
 
-## 功能特性
+## Feature highlights
 
-### 🎵 双模式操作
-- **Harmonize 模式**: 录制旋律，生成带和声的 MIDI 文件
-- **Evaluate 模式**: 录制演奏，与参考模板对比评分
+### 🎵 Dual operating modes
+- **Harmonize mode**: Record a melody and receive a MIDI file that adds harmony lines. Each note is harmonized with a root-position major triad instead of pulling from a fixed chord list.
+- **Evaluate mode**: Record a performance and compare it against the reference exercise to obtain a score.
 
-### 🎹 交互界面
-- 顶部模式切换按钮
-- 7 个白键按钮 (C-D-E-F-G-A-B)
-- 10 秒倒计时录制
-- 实时录制状态显示
+### 🎹 Interactive interface
+- Mode toggle at the top of the screen
+- Seven white-key buttons (C–D–E–F–G–A–B)
+- Ten-second countdown-based recording window
+- Live recording status and timer feedback
 
-### 📊 结果展示
-- **Harmonize**: 显示 MIDI 文件生成成功信息
-- **Evaluate**: 显示总分、子分数、错误详情和改进建议
+### 📊 Result panels
+- **Harmonize**: Confirms that the MIDI file was created, shows the saved filename, and reports how many notes were captured.
+- **Evaluate**: Displays the overall score, subscores, detected mistakes, and tailored practice advice.
 
-## 项目结构
+## Project structure
 
 ```
-flutter_app/
+fe/
 ├── lib/
-│   ├── main.dart          # 主应用和界面
-│   ├── models.dart        # 数据模型
-│   └── api_service.dart   # API 服务客户端
-├── pubspec.yaml           # Flutter 依赖配置
-└── README.md              # 项目说明
+│   ├── main.dart          # UI and application state
+│   ├── models.dart        # Data transfer objects
+│   └── api_service.dart   # HTTP client wrappers
+├── pubspec.yaml           # Flutter dependencies
+└── README.md              # This guide
 ```
 
-## 安装和运行
+## Installation & run
 
-### 前置要求
+### Prerequisites
 
 1. **Flutter SDK** (>= 2.19.0)
-2. **FastAPI 后端** 正在运行 (参考上级目录的后端代码)
+2. **FastAPI backend** running locally or on the same LAN (see `../be`)
 
-### 步骤
+### Steps
 
-1. **修改后端 IP 地址**
-   
-   编辑 `lib/api_service.dart`，将 `baseUrl` 修改为你的局域网 IP：
+1. **Point the client to your backend**
+
+   Edit `lib/api_service.dart` and update the `baseUrl` constant so it matches your backend host:
+
    ```dart
-   static const String baseUrl = 'http://192.168.1.100:8000'; // 修改此处
+   static const String baseUrl = 'http://192.168.1.100:8000';
    ```
 
-2. **安装依赖**
-   ```bash
-   cd flutter_app
+2. **Install dependencies**
+
+   ```powershell
+   cd fe
    flutter pub get
    ```
 
-3. **运行应用**
-   ```bash
+3. **Run the app**
+
+   ```powershell
    flutter run
    ```
 
-## 使用说明
+## Usage guide
 
-### 基本操作流程
+### Typical workflow
 
-1. **选择模式**
-   - 点击顶部的 "Harmonize" 或 "Evaluate" 按钮切换模式
+1. **Choose a mode**
+   - Tap the “Harmonize” or “Evaluate” toggle button.
 
-2. **开始录制**
-   - 点击红色的"开始录制"按钮
-   - 倒计时 10 秒开始
+2. **Start recording**
+   - Press the red “Start recording” button.
+   - A 10-second countdown window begins.
 
-3. **录制音符**
-   - 在倒计时期间点击白键按钮 (C, D, E, F, G, A, B)
-   - 每秒最多记录一个音符
-   - 同一秒内的最后一次点击生效
+3. **Play notes**
+   - Tap the white-key buttons (C, D, E, F, G, A, B) during the countdown.
+   - The recorder captures at most one note per second.
+   - If multiple taps occur within the same second, the latest tap wins.
 
-4. **查看结果**
-   - 录制结束后自动处理
-   - **Harmonize**: 生成 MIDI 文件到应用文档目录
-   - **Evaluate**: 显示评分和详细反馈
+4. **Review the results**
+   - Processing starts automatically when the countdown completes.
+   - **Harmonize**: Generates a MIDI file inside the app documents directory.
+   - **Evaluate**: Shows scoring details and suggestions for improvement.
 
-### 界面说明
+### Screen layout
 
-#### 顶部区域
-- **模式切换**: 在 Harmonize 和 Evaluate 模式间切换
-- **录制状态**: 显示当前状态和剩余时间
+#### Top area
+- **Mode toggle**: Switch between Harmonize and Evaluate.
+- **Recording status**: Shows whether you are waiting, recording, or finished, plus the remaining seconds.
 
-#### 中部区域
-- **钢琴键**: 7 个白键按钮，对应 C4-B4 音符
-- **按键反馈**: 按下的键会变蓝色高亮
+#### Middle area
+- **Piano keys**: Seven white keys that correspond to C4–B4.
+- **Visual feedback**: Active keys turn blue while pressed.
 
-#### 底部区域
-- **录制控制**: 开始/停止录制按钮
-- **结果显示**: 根据模式显示不同的结果
+#### Bottom area
+- **Recording controls**: Start/stop buttons.
+- **Result panel**: Displays mode-specific output after recording.
 
-### Harmonize 模式结果
-- ✅ 显示 MIDI 文件生成成功
-- 📁 显示文件名和保存位置
-- 📊 显示录制的音符数量
+### Harmonize mode output
+- ✅ Success banner confirming the MIDI file was created.
+- 📁 Filename of the saved MIDI.
+- 📊 Count of captured notes.
+- 🎼 **Harmony generation rule**: Each captured melody note produces a major triad (root, major third, perfect fifth) built on that pitch. The backend selects the proper pitches dynamically rather than reusing a fixed chord progression.
 
-### Evaluate 模式结果
-- 🎯 **总分**: 0-100 分，颜色编码 (绿色≥80，橙色≥60，红色<60)
-- 📊 **子分数**: 准确度和时机分数
-- 💡 **建议**: 个性化的改进建议
-- ❌ **错误详情**: 列出前 5 个错误 (漏音符、错音符、多余音符)
+### Evaluate mode output
+- 🎯 **Total score** (0–100) with color coding (green ≥ 80, orange ≥ 60, red < 60).
+- 📊 **Subscores** for accuracy and timing.
+- 💡 **Suggestions** tailored to the detected issues.
+- ❌ **Mistake list** highlighting up to the first five wrong, missing, or extra notes plus a count of any remaining issues.
 
-## 技术规范
+## Technical details
 
-### 音符映射
+### Note mapping
 ```
 C: 60 (C4)    D: 62 (D4)    E: 64 (E4)    F: 65 (F4)
 G: 67 (G4)    A: 69 (A4)    B: 71 (B4)
 ```
 
-### 录制规则
-- **时长**: 固定 10 秒
-- **量化**: 1 秒精度
-- **冲突处理**: 同一秒最后一次点击生效
-- **白键限制**: 只支持 C 大调白键
+### Recording rules
+- **Duration**: Fixed 10-second window.
+- **Quantization**: One-second resolution.
+- **Conflict handling**: The latest note within a one-second bucket replaces earlier taps.
+- **Scale restriction**: Only white keys from C major are available.
 
-### API 集成
-- **后端地址**: 可配置的局域网 IP
-- **超时时间**: 30 秒
-- **错误处理**: 完整的异常捕获和用户友好的错误提示
-- **连接检查**: 自动检测后端连接状态
+### Harmony generation logic
+- **Triad model**: Harmonies use dynamically constructed major triads based on each recorded note.
+- **Voicing**: The backend emits root-position chords (root, third, fifth) on separate MIDI tracks for melody and harmony.
+- **Adaptability**: Because the triads are derived per note, the harmony responds to melodic movement instead of looping through a pre-set chord chart.
 
-## 故障排除
+### API integration
+- **Backend host**: Configurable through `ApiService.baseUrl`.
+- **Timeouts**: 30-second request timeout with retry-safe error handling.
+- **Error reporting**: User-friendly messages for network and backend failures.
+- **Connectivity check**: Automatically verifies backend availability before sending payloads.
 
-### 常见问题
+## Troubleshooting
 
-1. **网络连接错误**
-   - 确认后端服务正在运行 (`python run.py`)
-   - 检查 IP 地址配置是否正确
-   - 确认设备在同一局域网内
+### Common issues
 
-2. **无法生成 MIDI 文件**
-   - 确认录制了至少一个音符
-   - 检查应用的文件写入权限
+1. **Network errors**
+   - Confirm the FastAPI server is running (`python run.py`).
+   - Verify the IP/port configuration in `api_service.dart`.
+   - Ensure the device running Flutter shares the same LAN.
 
-3. **评估功能异常**
-   - 确认后端包含 `exercise_c_major_01` 参考模板
-   - 检查录制的音符是否在白键范围内
+2. **MIDI file not generated**
+   - Make sure at least one note was recorded.
+   - Check that the app has permission to write to the documents directory.
 
-### 调试技巧
+3. **Evaluation fails**
+   - Confirm the backend has the `exercise_c_major_01` template available.
+   - Validate that recorded notes stay within the supported white-key range.
 
-1. **查看网络请求**
-   ```bash
+### Debugging tips
+
+1. **Inspect network requests**
+
+   ```powershell
    flutter logs
    ```
 
-2. **检查后端连接**
-   - 在浏览器访问 `http://<你的IP>:8000`
-   - 应该看到 API 欢迎信息
+2. **Probe backend availability**
+   - Visit `http://<your-ip>:8000` in a browser.
+   - You should see the FastAPI welcome message.
 
-3. **验证 JSON 数据**
-   - 检查 API 请求和响应格式
-   - 确认数据模型匹配
+3. **Validate JSON payloads**
+   - Compare Flutter requests and backend responses.
+   - Ensure they match the shapes defined in `models.dart`.
 
-## 开发说明
+## Development notes
 
-### 主要组件
+### Core components
+- **MusicHarmonyPage**: Stateful widget that drives the UI and state machine.
+- **ApiService**: Encapsulates HTTP calls to the backend.
+- **Models**: Data classes describing requests and responses.
 
-- **MusicHarmonyPage**: 主界面状态管理
-- **ApiService**: HTTP 客户端封装
-- **Models**: 数据传输对象
+### State management
+The app uses Flutter’s built-in `StatefulWidget` pattern:
+- `currentMode`: Active mode (Harmonize or Evaluate).
+- `isRecording`: Whether recording is in progress.
+- `recordedEvents`: Collected melody events.
+- `evaluationResult`: Scoring feedback returned by the backend.
 
-### 状态管理
+### File handling
+- Uses the `path_provider` package to resolve the app documents directory.
+- Automatically names and saves generated MIDI files in that directory.
 
-使用 Flutter 内置的 `StatefulWidget` 进行状态管理：
-- `currentMode`: 当前操作模式
-- `isRecording`: 录制状态
-- `recordedEvents`: 录制的音符事件
-- `evaluationResult`: 评估结果数据
+## Roadmap
 
-### 文件操作
-
-- 使用 `path_provider` 包获取应用文档目录
-- MIDI 文件自动命名并保存到本地
-
-## 未来改进
-
-- [ ] 添加 MIDI 文件播放功能
-- [ ] 支持更多调性和八度
-- [ ] 添加录制历史记录
-- [ ] 实现音符可视化波形
-- [ ] 支持导出和分享功能
+- [ ] Add MIDI playback controls in the UI.
+- [ ] Support additional keys and octaves.
+- [ ] Provide a recording history view.
+- [ ] Visualize notes with basic waveforms or piano roll.
+- [ ] Enable export and sharing options.

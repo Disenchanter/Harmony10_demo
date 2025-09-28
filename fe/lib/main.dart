@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Harmony Demo',
+      title: 'Harmony10 Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: true,
@@ -35,14 +35,14 @@ class MusicHarmonyPage extends StatefulWidget {
 }
 
 class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
-  // 状态变量
+  // State
   AppMode currentMode = AppMode.harmonize;
   bool isRecording = false;
-  bool countdownStarted = false; // 是否已开始倒计时
+  bool countdownStarted = false; // Tracks whether the countdown has started
   int recordingTime = 10;
   Timer? recordingTimer;
   
-  // 音符映射 (C4-B4)
+  // Note mapping (C4–B4)
   static const Map<String, int> noteMap = {
     'C': 60, // C4
     'D': 62, // D4
@@ -53,16 +53,16 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
     'B': 71, // B4
   };
   
-  // 录制的事件
+  // Recorded events
   List<MusicEvent> recordedEvents = [];
   
-  // 结果数据
+  // Result data
   EvaluateResponse? evaluationResult;
   String? midiFilePath;
   bool isLoading = false;
   String? errorMessage;
   
-  // 音频播放
+  // Audio playback
   AudioPlayer? audioPlayer;
   bool isPlaying = false;
   Duration currentPosition = Duration.zero;
@@ -78,7 +78,7 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
   void _startRecording() {
     setState(() {
       isRecording = true;
-      countdownStarted = false; // 重置倒计时状态
+      countdownStarted = false; // Reset countdown state
       recordingTime = 10;
       recordedEvents.clear();
       evaluationResult = null;
@@ -88,7 +88,7 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
   }
 
   void _startCountdown() {
-    if (countdownStarted) return; // 防止重复启动
+    if (countdownStarted) return; // Avoid starting multiple timers
     
     setState(() {
       countdownStarted = true;
@@ -109,14 +109,14 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
     recordingTimer?.cancel();
     setState(() {
       isRecording = false;
-      countdownStarted = false; // 重置倒计时状态
+      countdownStarted = false; // Reset countdown state
     });
     
     if (recordedEvents.isNotEmpty) {
       _processRecording();
     } else {
       setState(() {
-        errorMessage = '没有录制到任何音符';
+        errorMessage = 'No notes were recorded';
       });
     }
   }
@@ -124,7 +124,7 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
   void _onNotePressed(String noteName) {
     if (!isRecording) return;
 
-    // 如果是第一次按下音符，启动倒计时
+    // Start the countdown on the first note
     if (!countdownStarted) {
       _startCountdown();
     }
@@ -133,10 +133,10 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
     final noteValue = noteMap[noteName]!;
 
     setState(() {
-      // 移除同一秒的其他事件（同秒最后一次生效）
+      // Remove events at the same second (keep the latest)
       recordedEvents.removeWhere((event) => event.tSec == currentSecond);
       
-      // 添加新事件
+      // Add the new event
       recordedEvents.add(MusicEvent(
         tSec: currentSecond,
         note: noteValue,
@@ -170,11 +170,11 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
   Future<void> _handleHarmonize() async {
     final midiData = await ApiService.harmonize(recordedEvents);
     
-    // 保存 MIDI 文件到程序同目录下
+    // Save the MIDI file alongside the executable
     final executablePath = Platform.resolvedExecutable;
     final executableDir = Directory(executablePath).parent.path;
     
-    // 创建 midi 子文件夹
+    // Ensure the midi subdirectory exists
     final midiDir = Directory('$executableDir/midi');
     if (!await midiDir.exists()) {
       await midiDir.create(recursive: true);
@@ -183,12 +183,12 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
     final file = File('${midiDir.path}/harmony_${DateTime.now().millisecondsSinceEpoch}.mid');
     await file.writeAsBytes(midiData);
     
-    // 调试信息
-    print('可执行文件路径: $executablePath');
-    print('程序目录: $executableDir');
-    print('MIDI文件保存路径: ${file.path}');
-    print('MIDI数据大小: ${midiData.length} bytes');
-    print('文件是否存在: ${await file.exists()}');
+    // Debug output
+    print('Executable path: $executablePath');
+    print('Application directory: $executableDir');
+    print('MIDI file saved at: ${file.path}');
+    print('MIDI data size: ${midiData.length} bytes');
+    print('File exists: ${await file.exists()}');
     
     setState(() {
       midiFilePath = file.path;
@@ -209,21 +209,21 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
     if (audioPlayer == null) {
       audioPlayer = AudioPlayer();
       
-      // 监听播放状态
+      // Listen for playback state changes
       audioPlayer!.onPlayerStateChanged.listen((state) {
         setState(() {
           isPlaying = state == PlayerState.playing;
         });
       });
       
-      // 监听播放位置
+      // Track the playback position
       audioPlayer!.onPositionChanged.listen((position) {
         setState(() {
           currentPosition = position;
         });
       });
       
-      // 监听总时长
+      // Track the total duration
       audioPlayer!.onDurationChanged.listen((duration) {
         setState(() {
           totalDuration = duration;
@@ -238,27 +238,27 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
     try {
       await _initializeAudioPlayer();
       
-      // 检查文件是否存在
+      // Verify the file exists
       final file = File(midiFilePath!);
       if (!await file.exists()) {
         setState(() {
-          errorMessage = 'MIDI文件不存在: $midiFilePath';
+          errorMessage = 'MIDI file not found: $midiFilePath';
         });
         return;
       }
       
-      print('开始播放MIDI文件: $midiFilePath');
-      print('文件大小: ${await file.length()} bytes');
+      print('Starting MIDI playback: $midiFilePath');
+      print('File size: ${await file.length()} bytes');
       
-      // 尝试使用DeviceFileSource播放
+      // Attempt to play using DeviceFileSource
       await audioPlayer!.play(DeviceFileSource(midiFilePath!));
       
-      print('播放命令已发送');
+      print('Playback command issued');
       
     } catch (e) {
-      print('播放MIDI文件时发生错误: $e');
+      print('Error while playing MIDI file: $e');
       setState(() {
-        errorMessage = '播放失败: $e\n\n这可能是因为:\n1. MIDI文件格式不被支持\n2. 系统音频设备问题\n3. 音频驱动问题\n\n请尝试用外部播放器播放此文件。';
+        errorMessage = 'Playback failed: $e\n\nPossible reasons include:\n1. The MIDI file format is not supported\n2. The system audio device has an issue\n3. The audio driver reported an error\n\nTry opening the file with an external player.';
       });
     }
   }
@@ -289,29 +289,29 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // 顶部模式切换
+            // Top mode toggle
             _buildModeToggle(),
             
             const SizedBox(height: 20),
             
-            // 录制状态和倒计时
+            // Recording status and countdown
             _buildRecordingStatus(),
             
             const SizedBox(height: 30),
             
-            // 7个白键按钮
+            // Seven white key buttons
             _buildPianoKeys(),
             
             const SizedBox(height: 30),
             
-            // 录制控制按钮
+            // Recording control buttons
             _buildRecordingControls(),
             
             const SizedBox(height: 20),
             
-            // 结果展示区域
+            // Result display area
             Container(
-              height: 300, // 固定高度替代Expanded
+              height: 300, // Fixed height to replace Expanded
               child: SingleChildScrollView(
                 child: _buildResultArea(),
               ),
@@ -364,14 +364,14 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
       children: [
         Text(
           isRecording 
-            ? (countdownStarted ? '录制中...' : '等待第一个音符...') 
-            : '准备录制',
+            ? (countdownStarted ? 'Recording...' : 'Waiting for the first note...') 
+            : 'Ready to record',
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         const SizedBox(height: 10),
         if (isRecording && countdownStarted)
           Text(
-            '$recordingTime 秒',
+            '${recordingTime}s',
             style: Theme.of(context).textTheme.displayMedium?.copyWith(
               color: recordingTime <= 3 ? Colors.red : Colors.blue,
               fontWeight: FontWeight.bold,
@@ -379,7 +379,7 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
           ),
         if (isRecording && !countdownStarted)
           const Text(
-            '点击任意白键开始倒计时',
+            'Tap any white key to start the countdown',
             style: TextStyle(color: Colors.orange, fontSize: 16),
           ),
       ],
@@ -431,7 +431,7 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
       child: ElevatedButton.icon(
         onPressed: isRecording ? null : _startRecording,
         icon: const Icon(Icons.fiber_manual_record),
-        label: const Text('开始录制'),
+        label: const Text('Start recording'),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.red,
           foregroundColor: Colors.white,
@@ -449,7 +449,7 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 16),
-            Text('处理中...'),
+            Text('Processing...'),
           ],
         ),
       );
@@ -463,7 +463,7 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
             const Icon(Icons.error, size: 64, color: Colors.red),
             const SizedBox(height: 16),
             Text(
-              '错误: $errorMessage',
+              'Error: $errorMessage',
               style: const TextStyle(color: Colors.red),
               textAlign: TextAlign.center,
             ),
@@ -492,15 +492,15 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
           const SizedBox(height: 16),
           Text(
             currentMode == AppMode.harmonize
-                ? '录制旋律生成和声'
-                : '录制演奏进行评估',
+                ? 'Record a melody to generate harmony'
+                : 'Record your performance for evaluation',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: Colors.grey,
             ),
           ),
           const SizedBox(height: 8),
           const Text(
-            '点击上方的白键按钮录制音符',
+            'Tap the white keys above to record notes',
             style: TextStyle(color: Colors.grey),
           ),
         ],
@@ -515,26 +515,26 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
         const Icon(Icons.check_circle, size: 48, color: Colors.green),
         const SizedBox(height: 12),
         const Text(
-          'MIDI 文件生成成功！',
+          'MIDI file generated successfully!',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 6),
         Text(
-          '文件: ${midiFilePath!.split('/').last}',
+          'File: ${midiFilePath!.split('/').last}',
           style: const TextStyle(color: Colors.grey, fontSize: 12),
         ),
         const SizedBox(height: 12),
         const Text(
-          '包含旋律轨道和和声轨道',
+          'Includes melody and harmony tracks',
           style: TextStyle(color: Colors.blue, fontSize: 12),
         ),
         const SizedBox(height: 6),
         Text(
-          '录制了 ${recordedEvents.length} 个音符',
+          '${recordedEvents.length} notes recorded',
           style: const TextStyle(color: Colors.grey, fontSize: 12),
         ),
         const SizedBox(height: 16),
-        // 音频播放控制器
+        // Audio playback controls
         _buildAudioPlayerControls(),
       ],
     );
@@ -543,7 +543,7 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
   Widget _buildAudioPlayerControls() {
     return Column(
       children: [
-        // 播放进度条（如果有总时长）
+        // Playback progress bar (when total duration is available)
         if (totalDuration.inMilliseconds > 0) ...[
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -573,15 +573,15 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
           const SizedBox(height: 8),
         ],
         
-        // 播放控制按钮
+        // Playback control buttons
         // Row(
         //   mainAxisAlignment: MainAxisAlignment.center,
         //   children: [
-        //     // 播放/暂停按钮
+        //     // Play/pause button
         //     ElevatedButton.icon(
         //       onPressed: isPlaying ? _pausePlayback : _playMidiFile,
         //       icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-        //       label: Text(isPlaying ? '暂停' : '播放'),
+        //       label: Text(isPlaying ? 'Pause' : 'Play'),
         //       style: ElevatedButton.styleFrom(
         //         backgroundColor: isPlaying ? Colors.orange : Colors.green,
         //         foregroundColor: Colors.white,
@@ -591,12 +591,12 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
             
         //     const SizedBox(width: 12),
             
-        //     // 停止按钮
+        //     // Stop button
         //     if (isPlaying || currentPosition.inMilliseconds > 0)
         //       ElevatedButton.icon(
         //         onPressed: _stopPlayback,
         //         icon: const Icon(Icons.stop),
-        //         label: const Text('停止'),
+        //         label: const Text('Stop'),
         //         style: ElevatedButton.styleFrom(
         //           backgroundColor: Colors.red,
         //           foregroundColor: Colors.white,
@@ -623,7 +623,7 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          // 总分显示
+          // Overall score display
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -642,7 +642,7 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
                   ),
                 ),
                 Text(
-                  '总分',
+                  'Total score',
                   style: TextStyle(
                     fontSize: 16,
                     color: _getScoreColor(result.score),
@@ -654,22 +654,22 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
           
           const SizedBox(height: 20),
           
-          // 子分数
+          // Subscores
           Row(
             children: [
               Expanded(
-                child: _buildSubScore('准确度', result.subscores['accuracy'] ?? 0),
+                child: _buildSubScore('Accuracy', result.subscores['accuracy'] ?? 0),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildSubScore('时机', result.subscores['timing'] ?? 0),
+                child: _buildSubScore('Timing', result.subscores['timing'] ?? 0),
               ),
             ],
           ),
           
           const SizedBox(height: 20),
           
-          // 建议
+          // Suggestions
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -682,7 +682,7 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  '建议',
+                  'Suggestions',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -698,7 +698,7 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
             ),
           ),
           
-          // 错误详情
+          // Mistake details
           if (result.mistakes.isNotEmpty) ...[
             const SizedBox(height: 20),
             _buildMistakesList(result.mistakes),
@@ -741,7 +741,7 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '错误详情 (${mistakes.length})',
+          'Mistake details (${mistakes.length})',
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
@@ -751,7 +751,7 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
         ...mistakes.take(5).map((mistake) => _buildMistakeItem(mistake)),
         if (mistakes.length > 5)
           Text(
-            '... 还有 ${mistakes.length - 5} 个错误',
+            '... ${mistakes.length - 5} more mistakes',
             style: const TextStyle(color: Colors.grey),
           ),
       ],
@@ -765,22 +765,22 @@ class _MusicHarmonyPageState extends State<MusicHarmonyPage> {
 
     switch (mistake.errorType) {
       case 'wrong_note':
-        errorDescription = '第${mistake.timeSec}秒: 弹错了音符';
+        errorDescription = 'At ${mistake.timeSec}s: Wrong note played';
         errorIcon = Icons.music_off;
         errorColor = Colors.orange;
         break;
       case 'missing_note':
-        errorDescription = '第${mistake.timeSec}秒: 漏了音符';
+        errorDescription = 'At ${mistake.timeSec}s: Missing note';
         errorIcon = Icons.remove_circle;
         errorColor = Colors.red;
         break;
       case 'extra_note':
-        errorDescription = '第${mistake.timeSec}秒: 多余的音符';
+        errorDescription = 'At ${mistake.timeSec}s: Extra note';
         errorIcon = Icons.add_circle;
         errorColor = Colors.purple;
         break;
       default:
-        errorDescription = '第${mistake.timeSec}秒: 未知错误';
+        errorDescription = 'At ${mistake.timeSec}s: Unknown issue';
         errorIcon = Icons.error;
         errorColor = Colors.grey;
     }

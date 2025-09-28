@@ -26,7 +26,7 @@ class OctaveBaseEnum(str, Enum):
 
 
 class MusicEvent(BaseModel):
-    t_sec: int = Field(..., ge=0, le=60, description="Time in seconds (0-60)")  # 扩展到60秒
+    t_sec: int = Field(..., ge=0, le=60, description="Time in seconds (0-60)")  # Extended to 60 seconds
     note: int = Field(..., description="MIDI note number")
     vel: Optional[int] = Field(96, ge=1, le=127, description="Velocity (1-127), default 96")
 

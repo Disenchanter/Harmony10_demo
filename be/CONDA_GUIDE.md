@@ -1,147 +1,159 @@
-# Conda 虚拟环境使用指南
+# Conda Virtual Environment Guide
 
-## 🎯 环境概述
+## 🎯 Environment Overview
 
-已成功创建并配置了名为 `harmony_demo` 的 conda 虚拟环境，用于**解决方案**: 使用不同的PyPI源
+The conda virtual environment named `harmony_demo` has been created and configured for the Harmony Demo FastAPI backend service. It is set up to use the official PyPI index by default:
+
 ```powershell
-# 默认使用配置的PyPI官方源
+# Install dependencies from the official PyPI index
 C:\Users\LZ\anaconda3\envs\harmony_demo\python.exe -m pip install -r requirements.txt
+```
 
-# 如果需要临时使用其他源
+When you need to temporarily switch to a different mirror (for example, the Tsinghua mirror):
+
+```powershell
 C:\Users\LZ\anaconda3\envs\harmony_demo\python.exe -m pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
-```ny Demo FastAPI 后端服务。
+```
 
-### 环境信息
-- **环境名称**: harmony_demo  
-- **Python 版本**: 3.9.23
-- **位置**: `C:\Users\LZ\anaconda3\envs\harmony_demo`
-- **已安装依赖**: FastAPI, Uvicorn, Pydantic, Mido, Python-multipart
+### Environment Details
+- **Environment name**: `harmony_demo`
+- **Python version**: 3.9.23
+- **Location**: `C:\Users\LZ\anaconda3\envs\harmony_demo`
+- **Installed packages**: FastAPI, Uvicorn, Pydantic, Mido, python-multipart
 
-## 🚀 快速启动
+## 🚀 Quick Start
 
-### 方法一：使用启动脚本（推荐）
+### Option 1: Use the startup scripts (recommended)
 
-**PowerShell 脚本**:
+**PowerShell script**
+
 ```powershell
 .\start_server.ps1
 ```
 
-**批处理脚本**:
+**Batch script**
+
 ```cmd
 start_server.bat
 ```
 
-### 方法二：手动启动
+### Option 2: Start the server manually
 
 ```powershell
-# 进入项目目录
+# Navigate to the project directory
 cd "D:\Share_D\Internship\Harmony10_demo\be"
 
-# 使用虚拟环境运行服务器
+# Run the server with the virtual environment
 C:\Users\LZ\anaconda3\envs\harmony_demo\python.exe run.py
 ```
 
-## 🔧 环境管理
+## 🔧 Environment Management
 
-### 检查环境状态
+### Check environment status
+
 ```powershell
-# 查看所有环境
+# List all environments
 C:\Users\LZ\anaconda3\Scripts\conda.exe env list
 
-# 检查环境中的 Python 版本
+# Check the Python version in this environment
 C:\Users\LZ\anaconda3\envs\harmony_demo\python.exe --version
 
-# 查看已安装的包
+# List installed packages
 C:\Users\LZ\anaconda3\envs\harmony_demo\python.exe -m pip list
 ```
 
-### 安装新依赖
+### Install a new dependency
+
 ```powershell
-C:\Users\LZ\anaconda3\envs\harmony_demo\python.exe -m pip install <包名>
+C:\Users\LZ\anaconda3\envs\harmony_demo\python.exe -m pip install <package-name>
 ```
 
-### 重新安装依赖
+### Reinstall dependencies from the lock file
+
 ```powershell
 cd "D:\Share_D\Internship\Harmony10_demo\be"
 C:\Users\LZ\anaconda3\envs\harmony_demo\python.exe -m pip install -r requirements.txt
 ```
 
-## 🛠️ 故障排除
+## 🛠️ Troubleshooting
 
-### 问题：Conda 激活命令无效
+### Issue: `conda activate` does not work in PowerShell
 
-**原因**: PowerShell 中 conda 环境激活有问题
+**Cause**: Conda activation hooks are not available in the current PowerShell session.
 
-**解决方案**: 直接使用虚拟环境的 Python 路径
+**Solution**: Use the Python executable inside the environment directly.
+
 ```powershell
-# 不要使用: conda activate harmony_demo
-# 而是使用: 
-C:\Users\LZ\anaconda3\envs\harmony_demo\python.exe <脚本名>
+# Avoid: conda activate harmony_demo
+# Instead run scripts with:
+C:\Users\LZ\anaconda3\envs\harmony_demo\python.exe <script-name>
 ```
 
-### 问题：依赖安装失败
+### Issue: Dependency installation fails
 
-**解决方案**: 使用不同的 PyPI 源
+**Solution**: Retry with a specific index.
+
 ```powershell
-# 使用默认源
+# Use the default PyPI index
 C:\Users\LZ\anaconda3\envs\harmony_demo\python.exe -m pip install -r requirements.txt --index-url https://pypi.org/simple/
 
-# 或使用清华源
+# Or use the Tsinghua mirror
 C:\Users\LZ\anaconda3\envs\harmony_demo\python.exe -m pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
 ```
 
-### 问题：服务器无法启动
+### Issue: The server fails to start
 
-**检查步骤**:
-1. 确认在正确目录: `D:\Share_D\Internship\Harmony10_demo\be`
-2. 确认依赖已安装: 运行 `setup_environment.ps1`
-3. 检查端口占用: `netstat -ano | findstr :8000`
+1. Confirm you're in the correct directory: `D:\Share_D\Internship\Harmony10_demo\be`
+2. Ensure dependencies are installed: run `setup_environment.ps1`
+3. Check whether port 8000 is in use: `netstat -ano | findstr :8000`
 
-## 📍 重要路径
+## 📍 Important Paths
 
-- **环境路径**: `C:\Users\LZ\anaconda3\envs\harmony_demo`
-- **Python 执行文件**: `C:\Users\LZ\anaconda3\envs\harmony_demo\python.exe`
-- **项目目录**: `D:\Share_D\Internship\Harmony10_demo\be`
-- **服务器地址**: `http://127.0.0.1:8000`
-- **API 文档**: `http://127.0.0.1:8000/docs`
+- **Environment path**: `C:\Users\LZ\anaconda3\envs\harmony_demo`
+- **Python executable**: `C:\Users\LZ\anaconda3\envs\harmony_demo\python.exe`
+- **Project directory**: `D:\Share_D\Internship\Harmony10_demo\be`
+- **Server address**: `http://127.0.0.1:8000`
+- **API docs**: `http://127.0.0.1:8000/docs`
 
-## 🎵 服务器状态验证
+## 🎵 Server Health Checks
 
-### 健康检查
+### Quick checks
+
 ```powershell
-# 检查服务器是否运行
+# Verify the server is running
 curl http://127.0.0.1:8000
 
-# 查看API文档
+# Open the interactive API docs
 start http://127.0.0.1:8000/docs
 ```
 
-### 测试 API 端点
+### Test API endpoints
+
 ```powershell
-# 测试 harmonize 接口
+# Test the harmonize endpoint
 curl -X POST "http://127.0.0.1:8000/api/v1/harmonize" -H "Content-Type: application/json" -d '{"version":"1.0","mode":"harmonize","duration_sec":10,"quantize":"1s","octave_base":"C4","key":"C major","return_mode":"bytes","events":[{"t_sec":0,"note":60}]}' --output test.mid
 
-# 测试 evaluate 接口  
+# Test the evaluate endpoint
 curl -X POST "http://127.0.0.1:8000/api/v1/evaluate" -H "Content-Type: application/json" -d '{"version":"1.0","mode":"evaluate","duration_sec":10,"quantize":"1s","octave_base":"C4","key":"C major","reference_id":"exercise_c_major_01","events":[{"t_sec":0,"note":60}]}'
 ```
 
-## 📋 快速命令参考
+## 📋 Quick Command Reference
 
 ```powershell
-# 环境设置（首次使用）
+# Initial environment setup
 .\setup_environment.ps1
 
-# 启动服务器
+# Start the server
 .\start_server.ps1
 
-# 手动启动服务器
+# Manually start the server
 C:\Users\LZ\anaconda3\envs\harmony_demo\python.exe run.py
 
-# 检查服务器状态
+# Check server status
 curl http://127.0.0.1:8000
 
-# 查看API文档
+# Open the API documentation
 start http://127.0.0.1:8000/docs
 ```
 
-现在你的 conda 虚拟环境已经完全配置好了！🎉
+Your conda environment is ready to go! 🎉

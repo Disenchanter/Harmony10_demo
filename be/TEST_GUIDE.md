@@ -1,28 +1,28 @@
-# Music Harmony API 测试指南
+# Music Harmony API Test Guide
 
-这个文档包含了如何测试 Music Harmony API 的两个主要端点的说明和示例。
+This guide explains how to exercise the two primary endpoints exposed by the Music Harmony API and shows the expected responses.
 
-## 启动服务器
+## Start the server
 
 ```bash
-# 安装依赖
+# Install dependencies
 pip install -r requirements.txt
 
-# 启动服务器
+# Start the server
 python run.py
 ```
 
-服务器将在 `http://127.0.0.1:8000` 上运行。
+The server listens on `http://127.0.0.1:8000`.
 
-你可以访问 `http://127.0.0.1:8000/docs` 查看自动生成的 API 文档。
+You can open `http://127.0.0.1:8000/docs` to view the automatically generated API schema.
 
-## API 端点测试
+## Endpoint tests
 
-### 1. Harmonize 接口测试
+### 1. Harmonize endpoint
 
-**功能**: 根据输入的旋律事件生成带和声的 MIDI 文件
+**Purpose**: Generate a harmonized MIDI file based on the submitted melody events.
 
-**cURL 命令**:
+**cURL command**:
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/harmonize" \
@@ -44,16 +44,16 @@ curl -X POST "http://127.0.0.1:8000/api/v1/harmonize" \
      --output harmony.mid
 ```
 
-**预期结果**: 生成一个名为 `harmony.mid` 的 MIDI 文件，包含：
-- 轨道1: 旋律 (Piano, Channel 1)
-- 轨道2: 和声 (String Ensemble, Channel 2)
-- 和声模式: C(0-3s) / F(4-6s) / G(7-9s)
+**Expected result**: A file named `harmony.mid` is created containing:
+- Track 1: Melody (Piano, Channel 1)
+- Track 2: Harmony (String Ensemble, Channel 2)
+- Harmony voicing: each melody event generates a root-position major triad (root, +4, +7 semitones) that lasts until the next event.
 
-### 2. Evaluate 接口测试
+### 2. Evaluate endpoint
 
-**功能**: 评估用户演奏与参考模板的匹配度
+**Purpose**: Compare a user performance to a reference template and produce a score report.
 
-**cURL 命令**:
+**cURL command**:
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/evaluate" \
@@ -74,7 +74,7 @@ curl -X POST "http://127.0.0.1:8000/api/v1/evaluate" \
      }'
 ```
 
-**预期结果**: 返回 JSON 评估报告，包含：
+**Expected result**: The API returns a JSON report containing:
 ```json
 {
   "score": 30.0,
@@ -95,9 +95,9 @@ curl -X POST "http://127.0.0.1:8000/api/v1/evaluate" \
 }
 ```
 
-## 错误测试示例
+## Error scenarios
 
-### 1. 测试无效版本
+### 1. Unsupported version
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/harmonize" \
@@ -114,9 +114,9 @@ curl -X POST "http://127.0.0.1:8000/api/v1/harmonize" \
      }'
 ```
 
-**预期错误**: `unsupported_version`
+**Expected error**: `unsupported_version`
 
-### 2. 测试无效音符
+### 2. Invalid note
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/harmonize" \
@@ -133,9 +133,9 @@ curl -X POST "http://127.0.0.1:8000/api/v1/harmonize" \
      }'
 ```
 
-**预期错误**: `invalid_note`
+**Expected error**: `invalid_note`
 
-### 3. 测试重复时间段
+### 3. Duplicate timeslot
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/harmonize" \
@@ -155,9 +155,9 @@ curl -X POST "http://127.0.0.1:8000/api/v1/harmonize" \
      }'
 ```
 
-**预期错误**: `duplicate_timeslot`
+**Expected error**: `duplicate_timeslot`
 
-### 4. 测试不存在的参考模板
+### 4. Missing reference template
 
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/evaluate" \
@@ -174,16 +174,16 @@ curl -X POST "http://127.0.0.1:8000/api/v1/evaluate" \
      }'
 ```
 
-**预期错误**: `reference_not_found`
+**Expected error**: `reference_not_found`
 
-## 参考模板
+## Reference templates
 
 ### exercise_c_major_01
 
-这是内置的 C 大调练习模板：
+Built-in C-major exercise template:
 
 ```
-时间(秒) -> 目标音符
+Time (seconds) → Target note
 0 -> 60 (C)
 1 -> 62 (D)  
 2 -> 64 (E)
@@ -196,29 +196,29 @@ curl -X POST "http://127.0.0.1:8000/api/v1/evaluate" \
 9 -> 64 (E)
 ```
 
-## 技术规范
+## Technical specification
 
-- **量化**: 固定为 1 秒 (t_sec ∈ [0..9])
-- **调性**: 固定为 C major
-- **白键集合**: {60,62,64,65,67,69,71}
-- **同一秒规则**: 只保留最后一次点击
-- **默认力度**: vel = 96
-- **MIDI 格式**: Type-1 
-  - 轨道1: Channel 1, Program 0 (Piano)
-  - 轨道2: Channel 2, Program 48 (String Ensemble)
+- **Quantization**: Fixed to 1 second (t_sec ∈ [0..9])
+- **Key**: Fixed to C major
+- **White-key set**: {60, 62, 64, 65, 67, 69, 71}
+- **Per-second rule**: Keep only the last click within the same second
+- **Default velocity**: vel = 96
+- **MIDI format**: Type-1 
+  - Track 1: Channel 1, Program 0 (Piano)
+  - Track 2: Channel 2, Program 48 (String Ensemble)
 
-## 和声规律
+## Harmony generation rule
 
-- 0-3 秒: C major 和弦 (C-E-G: 60,64,67)
-- 4-6 秒: F major 和弦 (F-A-C: 65,69,60)  
-- 7-9 秒: G major 和弦 (G-B-D: 67,71,62)
+- For every recorded melody event at `t_sec`, the backend creates a major triad `[note, note+4, note+7]`.
+- The harmony notes sustain until the next melody event starts (or the clip ends).
+- The response metadata includes chord descriptors (for example, “C Major”, “D Major”).
 
-## 故障排除
+## Troubleshooting
 
-如果遇到问题：
+If something goes wrong:
 
-1. 确认服务器正在运行 (`http://127.0.0.1:8000`)
-2. 检查请求的 JSON 格式是否正确
-3. 验证所有必需字段都已提供
-4. 确认音符值在白键集合中
-5. 查看服务器日志获取详细错误信息
+1. Confirm the server is running (`http://127.0.0.1:8000`).
+2. Check that the request JSON is well-formed.
+3. Verify all required fields are supplied.
+4. Ensure the note values belong to the white-key set.
+5. Review the server logs for detailed error information.

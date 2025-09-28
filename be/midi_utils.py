@@ -5,12 +5,12 @@ from models import MusicEvent
 
 
 class MidiGenerator:
-    """MIDI文件生成器"""
+    """MIDI file generator"""
     
     def __init__(self):
-        self.ticks_per_beat = 480  # MIDI 时间分辨率
+        self.ticks_per_beat = 480  # MIDI time resolution
         self.tempo = 500000  # 120 BPM (microseconds per beat)
-        # MIDI音符号到音符名称的映射（包含升降号简化处理）
+        # Mapping from MIDI note numbers to note names (with simplified accidentals)
         self.note_names = {
             60: 'C', 61: 'C#', 62: 'D', 63: 'D#', 64: 'E', 65: 'F', 
             66: 'F#', 67: 'G', 68: 'G#', 69: 'A', 70: 'A#', 71: 'B', 
@@ -20,56 +20,56 @@ class MidiGenerator:
     
     def create_harmonized_midi(self, events: List[MusicEvent], duration_sec: int) -> tuple:
         """
-        创建带和声的 MIDI 文件
-        - 轨道1: 旋律 (Channel 1, Program 0 - Piano)  
-        - 轨道2: 和声 (Channel 2, Program 48 - String Ensemble)
-        - 和声规律: 根据旋律音符生成对应的三和弦
-        
+        Create a harmonized MIDI file
+        - Track 1: Melody (Channel 1, Program 0 - Piano)
+        - Track 2: Harmony (Channel 2, Program 48 - String Ensemble)
+        - Harmony pattern: Generate triads based on melody notes
+
         Returns:
             tuple: (midi_bytes, chord_names_info)
         """
-        # 创建 MIDI 文件 (Type 1)
+        # Create a MIDI file (Type 1)
         mid = mido.MidiFile(type=1)
         
-        # 创建旋律轨道
+        # Create the melody track
         melody_track = mido.MidiTrack()
         mid.tracks.append(melody_track)
         
-        # 设置 tempo
+        # Set tempo
         melody_track.append(mido.MetaMessage('set_tempo', tempo=self.tempo))
         melody_track.append(mido.Message('program_change', channel=0, program=0))
         
-        # 创建和声轨道
+        # Create the harmony track
         harmony_track = mido.MidiTrack()
         mid.tracks.append(harmony_track)
         harmony_track.append(mido.Message('program_change', channel=1, program=48))
         
-        # 处理旋律事件
+        # Process melody events
         self._add_melody_events(melody_track, events, duration_sec)
         
-        # 添加和声（基于旋律音符生成三和弦）并获取和弦名称
+        # Add harmony (triads based on melody notes) and collect chord names
         chord_names_info = self._add_harmony_events(harmony_track, events, duration_sec)
         
-        # 保存MIDI文件到本地
+        # Save the MIDI file locally
         midi_bytes = self._midi_to_bytes(mid)
         self._save_midi_file(mid, "harmony_output.mid")
         
         return midi_bytes, chord_names_info
     
     def _add_melody_events(self, track: mido.MidiTrack, events: List[MusicEvent], duration_sec: int):
-        """添加旋律事件到轨道"""
-        # 按时间排序事件
+        """Add melody events to the track"""
+        # Sort events by time
         sorted_events = sorted(events, key=lambda x: x.t_sec)
         
         current_time = 0
         current_note = None
         
         for event in sorted_events:
-            # 计算到达该事件的时间差 (以 ticks 为单位)
+            # Calculate the time delta (in ticks) to reach this event
             event_time_ticks = event.t_sec * self.ticks_per_beat
             delta_time = event_time_ticks - current_time
             
-            # 如果有正在播放的音符，先停止它
+            # Stop the currently playing note if needed
             if current_note is not None:
                 track.append(mido.Message('note_off', 
                                         channel=0, 
@@ -79,7 +79,7 @@ class MidiGenerator:
                 current_time = event_time_ticks
                 delta_time = 0
             
-            # 开始新音符
+            # Start a new note
             track.append(mido.Message('note_on', 
                                     channel=0, 
                                     note=event.note, 
@@ -88,7 +88,7 @@ class MidiGenerator:
             current_note = event.note
             current_time = event_time_ticks
         
-        # 在最后停止任何正在播放的音符
+        # Ensure the last note stops at the end
         if current_note is not None:
             end_time_ticks = duration_sec * self.ticks_per_beat
             delta_time = end_time_ticks - current_time
@@ -100,28 +100,28 @@ class MidiGenerator:
     
     def _add_harmony_events(self, track: mido.MidiTrack, events: List[MusicEvent], duration_sec: int) -> List[Dict]:
         """
-        添加和声事件
-        根据旋律中每个音符作为根音生成三和弦
-        
+        Add harmony events
+        Generate triads using each melody note as the root
+
         Returns:
-            List[Dict]: 和弦信息列表，包含时间、根音名称等
+            List[Dict]: List of chord information including time, root name, etc.
         """
-        # 按时间排序事件
+        # Sort events by time
         sorted_events = sorted(events, key=lambda x: x.t_sec)
         
-        # 为每个旋律音符生成三和弦
+        # Generate a triad for each melody note
         current_chord = None
         current_time = 0
         chord_names_info = []
         
         for i, event in enumerate(sorted_events):
-            # 计算当前和弦的持续时间
+            # Calculate the duration of the current chord
             if i < len(sorted_events) - 1:
                 chord_end_time = sorted_events[i + 1].t_sec
             else:
                 chord_end_time = duration_sec
             
-            # 结束当前和弦
+            # End the current chord
             if current_chord is not None:
                 event_time_ticks = event.t_sec * self.ticks_per_beat
                 delta_time = event_time_ticks - current_time
@@ -135,13 +135,13 @@ class MidiGenerator:
                                             time=note_off_time))
                 current_time = event_time_ticks
             
-            # 生成新的三和弦 (根音 + 三音 + 五音)
+            # Generate a new triad (root + third + fifth)
             root_note = event.note
-            third = root_note + 4  # 大三度
-            fifth = root_note + 7  # 纯五度
+            third = root_note + 4  # Major third
+            fifth = root_note + 7  # Perfect fifth
             current_chord = [root_note, third, fifth]
             
-            # 记录和弦信息
+            # Record chord details
             root_name = self.note_names.get(root_note, f'Unknown({root_note})')
             chord_names_info.append({
                 'time_sec': event.t_sec,
@@ -152,7 +152,7 @@ class MidiGenerator:
                 'note_names': [self.note_names.get(note, f'Unknown({note})') for note in current_chord]
             })
             
-            # 开始新和弦
+            # Start the new chord
             start_time_ticks = event.t_sec * self.ticks_per_beat
             delta_time = start_time_ticks - current_time if current_time > 0 else start_time_ticks
             
@@ -161,12 +161,12 @@ class MidiGenerator:
                 track.append(mido.Message('note_on', 
                                         channel=1, 
                                         note=note, 
-                                        velocity=60,  # 较小的音量避免和声太突出
+                                        velocity=60,  # Lower velocity keeps harmony balanced
                                         time=note_on_time))
             
             current_time = start_time_ticks
         
-        # 结束最后的和弦
+        # End the final chord
         if current_chord is not None:
             end_time_ticks = duration_sec * self.ticks_per_beat
             delta_time = end_time_ticks - current_time
@@ -182,46 +182,46 @@ class MidiGenerator:
         return chord_names_info
     
     def _midi_to_bytes(self, mid: mido.MidiFile) -> bytes:
-        """将 MIDI 对象转换为字节"""
+        """Convert a MIDI object to bytes"""
         bytes_io = BytesIO()
         mid.save(file=bytes_io)
         return bytes_io.getvalue()
     
     def _save_midi_file(self, mid: mido.MidiFile, filename: str) -> str:
         """
-        保存MIDI文件到本地
-        
+        Save the MIDI file locally
+
         Args:
-            mid: MIDI文件对象
-            filename: 保存的文件名
-            
+            mid: MIDI file object
+            filename: Output filename
+
         Returns:
-            str: 保存的文件路径
+            str: Path of the saved file
         """
         import os
-        # 确保输出目录存在
+        # Ensure the output directory exists
         output_dir = "midi_output"
         os.makedirs(output_dir, exist_ok=True)
         
-        # 生成带时间戳的文件名
+        # Generate a timestamped filename
         from datetime import datetime
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         final_filename = f"{timestamp}_{filename}"
         filepath = os.path.join(output_dir, final_filename)
         
-        # 保存文件
+        # Save the file
         mid.save(filepath)
-        print(f"MIDI文件已保存到: {filepath}")
+        print(f"MIDI file saved to: {filepath}")
         return filepath
 
 
 class ReferenceTemplates:
-    """参考模板管理器"""
+    """Reference template manager"""
     
     @staticmethod
     def get_reference_template(reference_id: str) -> Dict[int, int]:
         """
-        获取参考模板 (秒 -> 目标音符映射)
+        Retrieve the reference template (seconds -> target note mapping)
         """
         templates = {
             "exercise_c_major_01": {
@@ -245,35 +245,35 @@ class ReferenceTemplates:
 
 
 class MusicEvaluator:
-    """音乐评估器"""
+    """Music evaluator"""
     
     def __init__(self):
         self.reference_templates = ReferenceTemplates()
     
     def evaluate_performance(self, events: List[MusicEvent], reference_id: str, duration_sec: int) -> Dict:
         """
-        评估演奏表现 - 支持任意数量的音符
+        Evaluate performance - supports any number of notes
         """
         try:
             reference = self.reference_templates.get_reference_template(reference_id)
         except ValueError:
             raise ValueError("Reference not found")
         
-        # 将事件转换为时间->音符映射
+        # Convert events to a time -> note map
         played_notes = {}
         for event in events:
             if event.t_sec < duration_sec:
                 played_notes[event.t_sec] = event.note
         
-        # 计算评分 - 只检查参考模板中实际存在的时间点
+        # Calculate the score - only check times present in the reference template
         total_points = 0
         correct_notes = 0
         mistakes = []
         
-        # 获取参考模板中的有效时间范围
+        # Get the valid time range in the reference template
         reference_times = [t for t in reference.keys() if t < duration_sec]
         
-        # 检查参考模板中的每个时间点
+        # Check each time point in the reference template
         for sec in reference_times:
             expected_note = reference[sec]
             total_points += 1
@@ -297,10 +297,10 @@ class MusicEvaluator:
                     "error_type": "missing_note"
                 })
         
-        # 检查多余的音符 - 只检查不在参考模板中的演奏音符
+        # Check for extra notes - only consider notes not in the reference template
         for sec, note in played_notes.items():
             if sec not in reference or reference[sec] != note:
-                # 避免重复添加已经记录的错误
+                # Avoid duplicating errors already recorded
                 if not any(m.get("time_sec") == sec for m in mistakes):
                     mistakes.append({
                         "time_sec": sec,
@@ -309,21 +309,21 @@ class MusicEvaluator:
                         "error_type": "extra_note"
                     })
         
-        # 计算得分 - 处理空参考的情况
+        # Calculate the score - handle the case when the reference is empty
         if total_points > 0:
             accuracy_score = (correct_notes / total_points) * 100
         else:
-            # 如果没有参考点，但有演奏音符，给予基础分数
+            # If there are no reference points but notes were played, grant a baseline score
             accuracy_score = 50.0 if played_notes else 100.0
         
-        # 时间精度评分
+        # Timing accuracy score
         timing_penalty = len([m for m in mistakes if m["error_type"] in ["missing_note", "extra_note"]]) * 10
         timing_score = max(0, 100 - timing_penalty)
         
-        # 整体评分
+        # Overall score
         overall_score = (accuracy_score * 0.7 + timing_score * 0.3)
         
-        # 生成建议
+        # Generate advice
         advice = self._generate_advice(mistakes, correct_notes, total_points)
         
         return {
@@ -337,7 +337,7 @@ class MusicEvaluator:
         }
     
     def _generate_advice(self, mistakes: List[Dict], correct_notes: int, total_points: int) -> str:
-        """生成改进建议 - 处理各种情况"""
+        """Generate improvement advice - handles multiple situations"""
         if not mistakes:
             return "Perfect performance! Keep up the excellent work!"
         
@@ -356,7 +356,7 @@ class MusicEvaluator:
         if extra_notes:
             advice_parts.append(f"Avoid extra notes - you played {len(extra_notes)} additional notes.")
         
-        # 处理零参考点的情况
+        # Handle the case with zero reference points
         if total_points == 0:
             advice_parts.append("No reference template available for this duration.")
         elif correct_notes / total_points >= 0.8:
